@@ -1252,7 +1252,6 @@ namespace SimpleChess
             foreach (Checker item1 in board1d) {
                 if (item1.color == color) {
                     foreach (int index2 in possibleMoves(item1)) {
-                     //   if (board1d[index2].name == "K") { continue; }
 
                         makeMove(item1.index, index2);
                         if (isCheck(color))
@@ -1307,7 +1306,6 @@ namespace SimpleChess
                     list.Shuffle();
                     foreach (int index2 in list) 
                     {
-                       // if (board1d[index2].name == "K") { continue; }
                         makeMove(index, index2);
 
                         if (isCheck("black")){
@@ -1316,15 +1314,6 @@ namespace SimpleChess
                             continue;
                         }
 
-                        //if (isCheck("white"))
-                        //{
-                        //    if (isCheckMate("white"))
-                        //    {
-                        //        bestMove.firstIndex = index;
-                        //        bestMove.lastIndex = index2;
-                        //        return bestMove;
-                        //    }
-                        //}
                         minMax = moveScore("white", maxMin, stage);
 
                         if (maxMin<minMax) {
