@@ -95,13 +95,12 @@ namespace SimpleChess
                 handPiece = checker.Image;
                 List<int> range = possibleMoves(board1d[checker.TabIndex]);
                 foreach (int i in range)
-                {      
+                {
                     buttons1d[i].BackgroundImage = grayBackgound;
                 }
                 checker.BackgroundImage = grayBackgound;
             }
-            else if (checker.Tag != oldChecker.Tag && handPiece != null && 
-                checker.BackgroundImage == grayBackgound)
+            else if (checker.Tag != oldChecker.Tag && handPiece != null && checker.BackgroundImage == grayBackgound)
             {
                 makeMove(oldChecker.TabIndex, checker.TabIndex);
                 if (isCheck(turn))
@@ -114,11 +113,11 @@ namespace SimpleChess
                 else
                 {
                     buttonForward.Enabled = false;
-                    if (currentBoardIndex < boardPositions.Count -1)
+                    if (currentBoardIndex < boardPositions.Count - 1)
                     {
-                        boardPositions.RemoveRange(currentBoardIndex, (boardPositions.Count-1)-(currentBoardIndex));
+                        boardPositions.RemoveRange(currentBoardIndex, (boardPositions.Count - 1) - (currentBoardIndex));
                     }
-                    drawBoard(board1d);        
+                    drawBoard(board1d);
                     handPiece = null;
                     turn = switchColor(turn);
                     label1.Text = turn + " turn";
@@ -137,12 +136,15 @@ namespace SimpleChess
                         else
                         {
                             soundCheck.Play();
+                            await Task.Delay(200);
                             label1.Text = "Check!";
-                            return;
                         }
                     }
-                    soundClick.Play();
-                    if (turn == "black"&& vsComputer)
+                    else
+                    {
+                        soundClick.Play();
+                    }
+                    if (turn == "black" && vsComputer)
                     {
                         label1.Text = "Computer thinking..";
                         buttonNew.Enabled = false;
@@ -155,7 +157,6 @@ namespace SimpleChess
                         await Task.Delay(50);
                         computerTurn();
                     }
-                   
                 }
             }
         }
@@ -1478,7 +1479,6 @@ namespace SimpleChess
             radioLevel3.Enabled = false;
             await Task.Delay(50);
             computerTurn();
-
         }
     }
 }
