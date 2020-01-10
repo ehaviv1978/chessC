@@ -12,7 +12,7 @@ namespace SimpleChess
 {
     public partial class Form1 : Form
     {
-        private class BestMove { public int firstIndex;public int lastIndex; }
+        private struct BestMove { public int firstIndex;public int lastIndex; }
         Button oldChecker = new Button();
         Image handPiece = null;
         Image grayBackgound = global::SimpleChess.Properties.Resources.gray_background;
@@ -25,11 +25,23 @@ namespace SimpleChess
         int currentBoardIndex = -1;
         bool vsComputer = true;
         int compLvl = 2;
+        System.Media.SoundPlayer soundClick = new System.Media.SoundPlayer();
+        System.Media.SoundPlayer soundFail = new System.Media.SoundPlayer();
+        System.Media.SoundPlayer soundIllegal = new System.Media.SoundPlayer();
+        System.Media.SoundPlayer soundCheck = new System.Media.SoundPlayer();
+        System.Media.SoundPlayer soundWin = new System.Media.SoundPlayer();
+
+
 
 
         public Form1()
         {
             InitializeComponent();
+            soundClick.SoundLocation = "click01.wav";
+            soundFail.SoundLocation = "fail.wav";
+            soundIllegal.SoundLocation = "illegal.wav";
+            soundCheck.SoundLocation = "check.wav";
+            soundWin.SoundLocation = "win.wav";
             StartPosition = FormStartPosition.Manual;
             Location = new Point(50, 30);
             Height = 650;
@@ -94,7 +106,7 @@ namespace SimpleChess
                 makeMove(oldChecker.TabIndex, checker.TabIndex);
                 if (isCheck(turn))
                 {
-                    System.Media.SystemSounds.Hand.Play();
+                    soundIllegal.Play();
                     label1.Text = "Iligal Move!";
                     backMove();
                     boardPositions.RemoveAt(boardPositions.Count - 1);
@@ -114,6 +126,7 @@ namespace SimpleChess
                     {
                         if (isCheckMate(turn))
                         {
+                            soundWin.Play();
                             label1.Text = "CheckMate!!!";
                             foreach (Button button in buttons1d)
                             {
@@ -123,9 +136,12 @@ namespace SimpleChess
                         }
                         else
                         {
+                            soundCheck.Play();
                             label1.Text = "Check!";
+                            return;
                         }
                     }
+                    soundClick.Play();
                     if (turn == "black"&& vsComputer)
                     {
                         label1.Text = "Computer thinking..";
@@ -1340,7 +1356,7 @@ namespace SimpleChess
             makeMove(cordinate.firstIndex, cordinate.lastIndex);
             await Task.Delay(700);
             drawBoard(board1d);
-          
+
             turn = "white";
             buttonNew.Enabled = true;
             buttonBack.Enabled = true;
@@ -1353,7 +1369,8 @@ namespace SimpleChess
             {
                 if (isCheckMate("white"))
                 {
-                    label1.Text = "CheckMate!!!";
+                    soundFail.Play();
+                    label1.Text = "You Loose!!!";
                     foreach (Button button in buttons1d)
                     {
                         button.Enabled = false;
@@ -1361,9 +1378,12 @@ namespace SimpleChess
                 }
                 else
                 {
+                    soundCheck.Play();
                     label1.Text = "Check!";
+                    return;
                 }
             }
+            soundClick.Play();
         }
 
         private void checkBoxVS_CheckedChanged(object sender, EventArgs e)
