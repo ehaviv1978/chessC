@@ -1381,10 +1381,12 @@ namespace SimpleChess
                 {
                     soundCheck.Play();
                     label1.Text = "Check!";
-                    return;
                 }
             }
-            soundClick.Play();
+            else
+            {
+                soundClick.Play();
+            }
         }
 
         private void checkBoxVS_CheckedChanged(object sender, EventArgs e)
