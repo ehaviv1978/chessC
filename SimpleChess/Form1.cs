@@ -33,8 +33,6 @@ namespace SimpleChess
         System.Media.SoundPlayer soundWin = new System.Media.SoundPlayer();
 
 
-
-
         public Form1()
         {
             InitializeComponent();
@@ -151,6 +149,15 @@ namespace SimpleChess
                             await Task.Delay(200);
                             label1.Text = "Check!";
                         }
+                    }else if (isDrow(turn))
+                    {
+                        if (sound) { soundFail.Play(); }
+                        label1.Text = "Draw!!!";
+                        foreach (Button button in buttons1d)
+                        {
+                            button.Enabled = false;
+                        }
+                        return;
                     }
                     else
                     {
@@ -457,6 +464,29 @@ namespace SimpleChess
                         backMove();
                         boardPositions.RemoveAt(boardPositions.Count - 1);
                         enPassantReset(oppositColor);
+                    }
+                }
+            }
+            return true;
+        }
+
+        private bool isDrow(string color)
+        {
+            foreach (Checker item1 in board1d)
+            {
+                if (item1.color == color)
+                {
+                    foreach (int index2 in possibleMoves(item1))
+                    {
+                        makeMove(item1.index, index2);
+                        if (!isCheck(color))
+                        {
+                            backMove();
+                            boardPositions.RemoveAt(boardPositions.Count - 1);
+                            return false;
+                        }
+                        backMove();
+                        boardPositions.RemoveAt(boardPositions.Count - 1);
                     }
                 }
             }
@@ -1323,6 +1353,7 @@ namespace SimpleChess
             }
             if(color=="white"){ return min; }else{ return max; }
         }
+
 
         private BestMove bestMove(){
             int minMax = 99999;
