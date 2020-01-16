@@ -1342,16 +1342,24 @@ namespace SimpleChess
 
                         if (color == "white")
                         {
+                            //if (min == 99999) { return 0; }
                             if (min <= score) { return score; }
                         }
                         else
                         {
+                            //if (max == -99999) { return 0; }
                             if (max >= score) { return score; }
                         }
                     }
                 }
             }
-            if(color=="white"){ return min; }else{ return max; }
+            if (min == 99999) {
+                if (!isCheck("white")) { min = 0; } 
+            }
+            if (max == -99999) {
+                if (!isCheck("black")) { max = 0; } 
+            }
+            if (color=="white"){ return min; }else{ return max; }
         }
 
 
