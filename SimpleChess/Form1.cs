@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -15,13 +12,15 @@ namespace SimpleChess
         private struct BestMove { public int firstIndex;public int lastIndex; }
         Button oldChecker = new Button();
         Image handPiece = null;
-        Image grayBackgound = global::SimpleChess.Properties.Resources.gray_background;
-        Image redBackgound = global::SimpleChess.Properties.Resources.red_background;
+        Image grayBackgound = Properties.Resources.gray_background;
+        Image redBackgound = Properties.Resources.red_background;
         string turn = "white";
         Checker[] board1d = new Checker[64];
         Checker[,] board2d = new Checker[8, 8];
         Button[] buttons1d = new Button[64];
         List<Checker[]> boardPositions = new List<Checker[]>();
+        List<int> whitePieces = new List<int>();
+        List<int> blackPieces = new List<int>();
         int currentBoardIndex = -1;
         bool vsComputer = true;
         int compLvl = 2;
@@ -67,7 +66,7 @@ namespace SimpleChess
                 board1d[button.TabIndex].enPassant = false;
             }
             int i = 0;
-            newBoardPosition();
+            NewBoardPosition();
             while (i < 64)
             {
                 board2d[(i / 8), (i % 8)] = board1d[i];
@@ -76,7 +75,7 @@ namespace SimpleChess
         }
 
 
-        private async void checker_Click(Button checker)
+        private async void Checker_Click(Button checker)
         {
             if (vsComputer && turn == "black") { return; }
             if (checker == oldChecker)
@@ -100,7 +99,7 @@ namespace SimpleChess
                 }
                 oldChecker = checker;
                 handPiece = checker.Image;
-                List<int> range = possibleMoves(board1d[checker.TabIndex]);
+                List<int> range = PossibleMoves(board1d[checker.TabIndex]);
                 foreach (int i in range)
                 {
                     buttons1d[i].BackgroundImage = grayBackgound;
@@ -109,12 +108,12 @@ namespace SimpleChess
             }
             else if (checker.Tag != oldChecker.Tag && handPiece != null && checker.BackgroundImage == grayBackgound)
             {
-                makeMove(oldChecker.TabIndex, checker.TabIndex);
-                if (isCheck(turn))
+                MakeMove(oldChecker.TabIndex, checker.TabIndex);
+                if (IsCheck(turn))
                 {
                     if (sound) { soundIllegal.Play(); }
                     label1.Text = "Iligal Move!";
-                    backMove();
+                    BackMove();
                     boardPositions.RemoveAt(boardPositions.Count - 1);
                 }
                 else
@@ -124,13 +123,13 @@ namespace SimpleChess
                     {
                         boardPositions.RemoveRange(currentBoardIndex, (boardPositions.Count - 1) - (currentBoardIndex));
                     }
-                    drawBoard(board1d);
+                    DrawBoard(board1d);
                     handPiece = null;
-                    turn = switchColor(turn);
+                    turn = SwitchColor(turn);
                     label1.Text = turn + " turn";
-                    if (isCheck(turn))
+                    if (IsCheck(turn))
                     {
-                        if (isCheckMate(turn))
+                        if (IsCheckMate(turn))
                         {
                             if (sound) { soundWin.Play(); }
                             label1.Text = "CheckMate!!!";
@@ -149,7 +148,7 @@ namespace SimpleChess
                             await Task.Delay(200);
                             label1.Text = "Check!";
                         }
-                    }else if (isDrow(turn))
+                    }else if (IsDrow(turn))
                     {
                         if (sound) { soundFail.Play(); }
                         label1.Text = "Draw!!!";
@@ -177,13 +176,13 @@ namespace SimpleChess
                         radioLevel2.Enabled = false;
                         radioLevel3.Enabled = false;
                         await Task.Delay(50);
-                        computerTurn();
+                        ComputerTurn();
                     }
                 }
             }
         }
 
-        private string switchColor(string color)
+        private string SwitchColor(string color)
         {
             if (color == "white")
             {
@@ -195,14 +194,31 @@ namespace SimpleChess
             }
         }
 
-        private void backMove()
+        private void CountPieces()
         {
-            currentBoardIndex--;
-            getBoard(currentBoardIndex);
-            if (currentBoardIndex == 0) { buttonBack.Enabled = false; }
+            whitePieces.Clear();
+            blackPieces.Clear();
+            foreach (Checker checker in board1d)
+            {
+                if (checker.color == "white")
+                {
+                    whitePieces.Add(checker.index);
+                }else if (checker.color == "black")
+                {
+                    blackPieces.Add(checker.index);
+                }
+            }
         }
 
-        private void makeMove(int indexFirst, int indexLast)
+        private void BackMove()
+        {
+            currentBoardIndex--;
+            GetBoard(currentBoardIndex);
+            if (currentBoardIndex == 0) { buttonBack.Enabled = false; }
+            CountPieces();
+        }
+
+        private void MakeMove(int indexFirst, int indexLast)
         {
             board1d[indexLast].color = board1d[indexFirst].color;
             board1d[indexLast].name = board1d[indexFirst].name;
@@ -254,12 +270,13 @@ namespace SimpleChess
                 }
             }
             board1d[indexFirst].moved = true;
-            enPassantReset(board1d[indexLast].color);
-            newBoardPosition();
+            EnPassantReset(board1d[indexLast].color);
+            NewBoardPosition();
             buttonBack.Enabled = true;
+            CountPieces();
         }
 
-        private void newBoardPosition()
+        private void NewBoardPosition()
         {
             Checker[] newBoardPosition = new Checker[64];
             foreach (Checker checker in board1d)
@@ -275,7 +292,7 @@ namespace SimpleChess
             currentBoardIndex++;
         }
 
-        private void getBoard(int boardPositionIndex)
+        private void GetBoard(int boardPositionIndex)
         {
             foreach (Checker checker in board1d)
             {
@@ -286,7 +303,7 @@ namespace SimpleChess
             }
         }
 
-        private void enPassantReset(string color)
+        private void EnPassantReset(string color)
         {
             if (color == "white")
             {
@@ -305,7 +322,7 @@ namespace SimpleChess
         }
 
 
-        private void drawBoard(Checker[] board)
+        private void DrawBoard(Checker[] board)
         {
             int i = 0;
             foreach (Button button in buttons1d)
@@ -336,10 +353,10 @@ namespace SimpleChess
                             button.Image = global::SimpleChess.Properties.Resources.rock_white;
                             break;
                         case "K":
-                            if (isCheck("white")) 
+                            if (IsCheck("white")) 
                             { 
                                 button.BackgroundImage = redBackgound;
-                                buttons1d[isThretened(board1d[button.TabIndex], "black")].BackgroundImage = redBackgound;
+                                buttons1d[IsThretened(board1d[button.TabIndex], "black")].BackgroundImage = redBackgound;
                             }
                             button.Image = global::SimpleChess.Properties.Resources.king_white;
                             break;
@@ -366,10 +383,10 @@ namespace SimpleChess
                             break;
                         case "K":
                             button.Image = global::SimpleChess.Properties.Resources.king_black;
-                            if (isCheck("black"))
+                            if (IsCheck("black"))
                             {
                                 button.BackgroundImage = redBackgound;
-                                buttons1d[isThretened(board1d[button.TabIndex], "white")].BackgroundImage = redBackgound;
+                                buttons1d[IsThretened(board1d[button.TabIndex], "white")].BackgroundImage = redBackgound;
                             }
                             break;
                     }
@@ -382,14 +399,14 @@ namespace SimpleChess
             }
         }
 
-        private void newBoard()
+        private void NewBoard()
         {
             label1.Text = "White Move First";
             handPiece = null;
             oldChecker = empty;
             turn = "white";
-            getBoard(0);
-            drawBoard(board1d);
+            GetBoard(0);
+            DrawBoard(board1d);
             for (int i = 0; i < 64; i++)
             {
                 buttons1d[i].BackgroundImage = null;
@@ -403,14 +420,14 @@ namespace SimpleChess
                 button.Enabled = true;
             }
             boardPositions.Clear();
-            newBoardPosition();
+            NewBoardPosition();
             currentBoardIndex = 0;
             buttonPlay.Enabled = false;
             buttonForward.Enabled = false;
             buttonBack.Enabled = false;
         }
 
-        private int isThretened(Checker checker, string color)
+        private int IsThretened(Checker checker, string color)
         {
             foreach (Checker oldChecker in board1d)
             {
@@ -425,67 +442,65 @@ namespace SimpleChess
             return -1;
         }
 
-        private bool isCheck(string color)
+        private bool IsCheck(string color)
         {
-            string oppositColor = switchColor(color);
-            int index = -1;
+            string oppositColor = SwitchColor(color);
             foreach (Checker checker in board1d)
             {
                 if (checker.color == color && checker.name == "K")
                 {
-                    index = checker.index;
-                    break;
+                    if (IsThretened(board1d[checker.index], oppositColor) != -1)
+                    {
+                        return true;
+                    }
+                    return false;
                 }
-            }
-            if (isThretened(board1d[index], oppositColor)!=-1)
-            {
-                return true;
             }
             return false;
         }
 
-        private bool isCheckMate(string color)
+        private bool IsCheckMate(string color)
         {
-            string oppositColor = switchColor(color);
+            string oppositColor = SwitchColor(color);
             foreach (Checker checker in board1d)
             {
                 if (checker.color == color)
                 {
-                    foreach (int moveIndex in possibleMoves(checker))
+                    foreach (int moveIndex in PossibleMoves(checker))
                     {
-                        makeMove(checker.index, moveIndex);
-                        if (!isCheck(color))
+                        MakeMove(checker.index, moveIndex);
+                        if (!IsCheck(color))
                         {
-                            backMove();
+                            BackMove();
                             boardPositions.RemoveAt(boardPositions.Count - 1);
-                            enPassantReset(oppositColor);
+                            EnPassantReset(oppositColor);
                             return false;
                         }
-                        backMove();
+                        BackMove();
                         boardPositions.RemoveAt(boardPositions.Count - 1);
-                        enPassantReset(oppositColor);
+                        EnPassantReset(oppositColor);
                     }
                 }
             }
             return true;
         }
 
-        private bool isDrow(string color)
+        private bool IsDrow(string color)
         {
             foreach (Checker item1 in board1d)
             {
                 if (item1.color == color)
                 {
-                    foreach (int index2 in possibleMoves(item1))
+                    foreach (int index2 in PossibleMoves(item1))
                     {
-                        makeMove(item1.index, index2);
-                        if (!isCheck(color))
+                        MakeMove(item1.index, index2);
+                        if (!IsCheck(color))
                         {
-                            backMove();
+                            BackMove();
                             boardPositions.RemoveAt(boardPositions.Count - 1);
                             return false;
                         }
-                        backMove();
+                        BackMove();
                         boardPositions.RemoveAt(boardPositions.Count - 1);
                     }
                 }
@@ -493,10 +508,10 @@ namespace SimpleChess
             return true;
         }
 
-        private List<int> possibleMoves(Checker checker)
+        private List<int> PossibleMoves(Checker checker)
         {
             string color = checker.color;
-            string opositeColor = switchColor(color);
+            string opositeColor = SwitchColor(color);
             int rowOld = checker.index / 8;
             int columnOld = checker.index % 8;
             List<int> possibleMoves = new List<int>();
@@ -632,9 +647,9 @@ namespace SimpleChess
                     if (board1d[checker.index + 3].name == "r" && !board1d[checker.index + 3].moved &&
                             board1d[checker.index + 2].name == null && board1d[checker.index + 1].name == null)
                     {
-                        if (isThretened(checker, opositeColor)==-1 &&
-                            isThretened(board1d[checker.index + 2], opositeColor)==-1 &&
-                            isThretened(board1d[checker.index + 1], opositeColor)==-1)
+                        if (IsThretened(checker, opositeColor)==-1 &&
+                            IsThretened(board1d[checker.index + 2], opositeColor)==-1 &&
+                            IsThretened(board1d[checker.index + 1], opositeColor)==-1)
                         {
                             if (checker.color == "white")
                             {
@@ -661,9 +676,9 @@ namespace SimpleChess
                             board1d[checker.index - 3].name == null && board1d[checker.index - 2].name == null &&
                             board1d[checker.index - 1].name == null)
                     {
-                        if (isThretened(checker, opositeColor)==-1 &&
-                            isThretened(board1d[checker.index - 2], opositeColor)==-1 &&
-                            isThretened(board1d[checker.index - 1], opositeColor)==-1)
+                        if (IsThretened(checker, opositeColor)==-1 &&
+                            IsThretened(board1d[checker.index - 2], opositeColor)==-1 &&
+                            IsThretened(board1d[checker.index - 1], opositeColor)==-1)
                         {
                             if (checker.color == "white")
                             {
@@ -1013,16 +1028,16 @@ namespace SimpleChess
         }
 
 
-        private void button_Click(object sender, EventArgs e)
+        private void Button_Click(object sender, EventArgs e)
         {
             Button btn = sender as Button;
-            checker_Click(btn);
+            Checker_Click(btn);
         }
 
 
         private void buttonNew_Click(object sender, EventArgs e)
         {
-            newBoard();
+            NewBoard();
         }
 
         private bool isValidMove(Checker oldChecker, Checker newChecker)
@@ -1035,7 +1050,7 @@ namespace SimpleChess
             int rowDiff = rowNew - rowOld;
             int columnDiff = columnNew - columnOld;
             int num = 2;
-            string opositTurn = switchColor(oldChecker.color);
+            string opositTurn = SwitchColor(oldChecker.color);
             if (oldChecker.color == "white") { num = -1; } else { num = 1; }
 
 
@@ -1154,9 +1169,9 @@ namespace SimpleChess
                         board1d[oldChecker.index + 3].name == "r" && (!board1d[oldChecker.index + 3].moved) &&
                         board1d[oldChecker.index + 2].name == null && board1d[oldChecker.index + 1].name == null)
                     {
-                        if (isThretened(oldChecker, opositTurn)==-1 &&
-                            isThretened(board1d[oldChecker.index + 2], opositTurn)==-1 &&
-                            isThretened(board1d[oldChecker.index + 1], opositTurn)==-1)
+                        if (IsThretened(oldChecker, opositTurn)==-1 &&
+                            IsThretened(board1d[oldChecker.index + 2], opositTurn)==-1 &&
+                            IsThretened(board1d[oldChecker.index + 1], opositTurn)==-1)
                         {
                             if (oldChecker.color == "white")
                             {
@@ -1185,9 +1200,9 @@ namespace SimpleChess
                         (!board1d[oldChecker.index - 4].moved) && board1d[oldChecker.index - 3].name == null &&
                         board1d[oldChecker.index - 2].name == null && board1d[oldChecker.index - 1].name == null)
                     {
-                        if (isThretened(oldChecker, opositTurn)==-1 &&
-                            isThretened(board1d[oldChecker.index - 2], opositTurn)==-1 &&
-                            isThretened(board1d[oldChecker.index - 1], opositTurn)==-1)
+                        if (IsThretened(oldChecker, opositTurn)==-1 &&
+                            IsThretened(board1d[oldChecker.index - 2], opositTurn)==-1 &&
+                            IsThretened(board1d[oldChecker.index - 1], opositTurn)==-1)
                         {
                             if (oldChecker.color == "white")
                             {
@@ -1276,30 +1291,33 @@ namespace SimpleChess
             int score = 0;
             foreach (Checker item in board1d)
             {
-                if (item.color == "black")
+                if (item.color != null)
                 {
-                    switch (item.name)
+                    if (item.color == "black")
                     {
-                        case "p": score += 100; break;
-                        case "k": score += 350; break;
-                        case "b": score += 350; break;
-                        case "r": score += 525; break;
-                        case "q": score += 1000; break;
-                        case "K": score += 10000; break;
-                        default: break;
+                        switch (item.name)
+                        {
+                            case "p": score += 100; break;
+                            case "k": score += 350; break;
+                            case "b": score += 350; break;
+                            case "r": score += 525; break;
+                            case "q": score += 1000; break;
+                            case "K": score += 10000; break;
+                            default: break;
+                        }
                     }
-                }
-                else
-                {
-                    switch (item.name)
+                    else
                     {
-                        case "p": score -= 100; break;
-                        case "k": score -= 350; break;
-                        case "b": score -= 350; break;
-                        case "r": score -= 525; break;
-                        case "q": score -= 1000; break;
-                        case "K": score -= 10000; break;
-                        default: break;
+                        switch (item.name)
+                        {
+                            case "p": score -= 100; break;
+                            case "k": score -= 350; break;
+                            case "b": score -= 350; break;
+                            case "r": score -= 525; break;
+                            case "q": score -= 1000; break;
+                            case "K": score -= 10000; break;
+                            default: break;
+                        }
                     }
                 }
             }
@@ -1310,107 +1328,126 @@ namespace SimpleChess
         {
             int min = 99999;
             int max = -99999;
-           
-            foreach (Checker item1 in board1d) {
-                if (item1.color == color) {
-                    foreach (int index2 in possibleMoves(item1)) {
+            int[] piecesArry;
+            if (color=="black")
+            {
+                piecesArry = blackPieces.ToArray();
+            }
+            else
+            {
+                piecesArry = whitePieces.ToArray();
+            }
 
-                        makeMove(item1.index, index2);
-                        if (isCheck(color))
-                        {
-                            backMove();
-                            boardPositions.RemoveAt(boardPositions.Count - 1);
-                            continue;
-                        }
 
-                        if (depth>1) {
-                            if (color == "white") {
-                                min = moveScore("black", min, depth - 1);
-                            } else {
-                                max = moveScore("white", max, depth - 1);
-                            }
-                        }else{
-                            if (color == "white") {
-                                if (min>boardScore()){ min = boardScore(); }
-                            } else {
-                                if (max<boardScore()){ max = boardScore(); }
-                            }
-                        }
-
-                        backMove();
+            foreach (int index in piecesArry)
+            {
+                foreach (int index2 in PossibleMoves(board1d[index]))
+                {
+                    MakeMove(index, index2);
+                    if (IsCheck(color))
+                    {
+                        BackMove();
                         boardPositions.RemoveAt(boardPositions.Count - 1);
-
+                        continue;
+                    }
+                    if (depth > 1)
+                    {
                         if (color == "white")
                         {
-                            //if (min == 99999) { return 0; }
-                            if (min <= score) { return score; }
+                            min = moveScore("black", min, depth - 1);
                         }
                         else
                         {
-                            //if (max == -99999) { return 0; }
-                            if (max >= score) { return score; }
+                            max = moveScore("white", max, depth - 1);
                         }
+                    }
+                    else
+                    {
+                        if (color == "white")
+                        {
+                            if (min > boardScore()) { min = boardScore(); }
+                        }
+                        else
+                        {
+                            if (max < boardScore()) { max = boardScore(); }
+                        }
+                    }
+
+                    BackMove();
+                    boardPositions.RemoveAt(boardPositions.Count - 1);
+
+                    if (color == "white")
+                    {
+                        if (min <= score) { return score; }
+                    }
+                    else
+                    {
+                        if (max >= score) { return score; }
                     }
                 }
             }
             if (min == 99999) {
-                if (!isCheck("white")) { min = 0; } 
+                if (!IsCheck("white")) { min = 0; } 
             }
             if (max == -99999) {
-                if (!isCheck("black")) { max = 0; } 
+                if (!IsCheck("black")) { max = 0; } 
             }
-            if (color=="white"){ return min; }else{ return max; }
+            if (color=="white")
+            { 
+                return min; 
+            }else
+            { 
+                return max; 
+            }
         }
 
 
-        private BestMove bestMove(){
+        private BestMove CalculateBestMove(){
             int minMax = 99999;
             int maxMin = -999999;
-            int stage = compLvl;
             BestMove bestMove = new BestMove();
-            Random rnd = new Random();
-            int[] arr = Enumerable.Range(0,64).OrderBy(c => rnd.Next()).ToArray();
+            int[] blackPiecesArr = blackPieces.OrderBy(x => Guid.NewGuid()).ToList().ToArray(); //randomize the black pieces list into arry
 
-            foreach (int index in arr) {
-                if (board1d[index].color == "black") {
-                    List<int> list = possibleMoves(board1d[index]);
-                    list.Shuffle();
-                    foreach (int index2 in list) 
+            foreach (int index in blackPiecesArr)
+            {
+                List<int> list = PossibleMoves(board1d[index]);
+                list.Shuffle();
+                foreach (int index2 in list)
+                {
+                    MakeMove(index, index2);
+
+                    if (IsCheck("black"))
                     {
-                        makeMove(index, index2);
-
-                        if (isCheck("black")){
-                            backMove();
-                            boardPositions.RemoveAt(boardPositions.Count - 1);
-                            continue;
-                        }
-
-                        minMax = moveScore("white", maxMin, stage);
-
-                        if (maxMin<minMax) {
-                            maxMin = minMax;
-                            bestMove.firstIndex = index;
-                            bestMove.lastIndex = index2;
-                        }
-
-                        backMove();
+                        BackMove();
                         boardPositions.RemoveAt(boardPositions.Count - 1);
+                        continue;
                     }
+
+                    minMax = moveScore("white", maxMin, compLvl);
+
+                    if (maxMin < minMax)
+                    {
+                        maxMin = minMax;
+                        bestMove.firstIndex = index;
+                        bestMove.lastIndex = index2;
+                    }
+
+                    BackMove();
+                    boardPositions.RemoveAt(boardPositions.Count - 1);
                 }
             }
             return bestMove;
         }
 
-        private async void computerTurn()
+        private async void ComputerTurn()
         {
             BestMove cordinate = new BestMove();            
-            cordinate = bestMove();
-            //foreach (Button item in buttons1d) { item.Enabled = true; }
+            cordinate = CalculateBestMove();
             buttons1d[cordinate.firstIndex].BackgroundImage = redBackgound;
             buttons1d[cordinate.lastIndex].BackgroundImage = redBackgound;
-            makeMove(cordinate.firstIndex, cordinate.lastIndex);
+            MakeMove(cordinate.firstIndex, cordinate.lastIndex);
             await Task.Delay(700);
-            drawBoard(board1d);
+            DrawBoard(board1d);
 
             turn = "white";
             buttonNew.Enabled = true;
@@ -1420,9 +1457,9 @@ namespace SimpleChess
             radioLevel2.Enabled = true;
             radioLevel3.Enabled = true;
             label1.Text = "White turn";
-            if (isCheck("white"))
+            if (IsCheck("white"))
             {
-                if (isCheckMate("white"))
+                if (IsCheckMate("white"))
                 {
                     if (sound)
                     {
@@ -1452,7 +1489,7 @@ namespace SimpleChess
             }
         }
 
-        private void checkBoxVS_CheckedChanged(object sender, EventArgs e)
+        private void CheckBoxVS_CheckedChanged(object sender, EventArgs e)
         {
             if (checkBoxVS.Checked) { vsComputer = true; } else { vsComputer = false; }
             if (vsComputer && turn=="black") {
@@ -1465,22 +1502,22 @@ namespace SimpleChess
             }
         }
 
-        private void radioLevel1_CheckedChanged(object sender, EventArgs e)
+        private void RadioLevel1_CheckedChanged(object sender, EventArgs e)
         {
             if (radioLevel1.Checked) { compLvl = 2; }
         }
 
-        private void radioLevel2_CheckedChanged(object sender, EventArgs e)
+        private void RadioLevel2_CheckedChanged(object sender, EventArgs e)
         {
             if (radioLevel2.Checked) { compLvl = 3; }
         }
 
-        private void radioLevel3_CheckedChanged(object sender, EventArgs e)
+        private void RadioLevel3_CheckedChanged(object sender, EventArgs e)
         {
             if (radioLevel3.Checked) { compLvl = 4; }
         }
 
-        private void buttonBack_Click(object sender, EventArgs e)
+        private void ButtonBack_Click(object sender, EventArgs e)
         {
             foreach (Button button in buttons1d)
             {
@@ -1488,11 +1525,11 @@ namespace SimpleChess
             }
             if (currentBoardIndex > 0)
             {
-                label1.Text = switchColor(turn) + " turn";
+                label1.Text = SwitchColor(turn) + " turn";
                 buttonForward.Enabled = true;
-                backMove();
-                drawBoard(board1d);
-                turn = switchColor(turn);
+                BackMove();
+                DrawBoard(board1d);
+                turn = SwitchColor(turn);
                 handPiece = null;
                 oldChecker = empty;
             }
@@ -1506,13 +1543,13 @@ namespace SimpleChess
                 buttonPlay.Enabled = false;
             }
         }
-        private void buttonForward_Click(object sender, EventArgs e)
+        private void ButtonForward_Click(object sender, EventArgs e)
         {
             currentBoardIndex++;
-            getBoard(currentBoardIndex);
-            drawBoard(board1d);
-            label1.Text = switchColor(turn) + " turn";
-            turn = switchColor(turn);
+            GetBoard(currentBoardIndex);
+            DrawBoard(board1d);
+            label1.Text = SwitchColor(turn) + " turn";
+            turn = SwitchColor(turn);
             buttonBack.Enabled = true;
             if (currentBoardIndex >= boardPositions.Count - 1)
             {
@@ -1527,7 +1564,7 @@ namespace SimpleChess
                 buttonPlay.Enabled = false;
             }
         }
-        private async void buttonPlay_Click(object sender, EventArgs e)
+        private async void ButtonPlay_Click(object sender, EventArgs e)
         {
             if (currentBoardIndex+1 < boardPositions.Count)
             {
@@ -1543,10 +1580,10 @@ namespace SimpleChess
             radioLevel2.Enabled = false;
             radioLevel3.Enabled = false;
             await Task.Delay(50);
-            computerTurn();
+            ComputerTurn();
         }
 
-        private void checkSound_CheckedChanged(object sender, EventArgs e)
+        private void CheckSound_CheckedChanged(object sender, EventArgs e)
         {
             if (checkSound.Checked) { sound = true; }else { sound = false; }
         }
